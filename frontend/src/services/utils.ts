@@ -23,16 +23,16 @@ export const createCharacterFormData = (
   photo?: File
 ): FormData => {
   const formData = new FormData();
-  
+
   formData.append('groupId', data.groupId);
   formData.append('name', data.name);
   formData.append('information', data.information);
   formData.append('relatedLinks', JSON.stringify(data.relatedLinks));
-  
+
   if (photo) {
     formData.append('photo', photo);
   }
-  
+
   return formData;
 };
 
@@ -42,15 +42,15 @@ export const createCharacterFormData = (
 export const validateImageFile = (file: File): string | null => {
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
   const maxSize = 5 * 1024 * 1024; // 5MB
-  
+
   if (!allowedTypes.includes(file.type)) {
     return 'サポートされていないファイル形式です。JPEG、PNG、GIF、WebP形式のファイルを選択してください。';
   }
-  
+
   if (file.size > maxSize) {
     return 'ファイルサイズが大きすぎます。5MB以下のファイルを選択してください。';
   }
-  
+
   return null;
 };
 
@@ -77,13 +77,13 @@ export const transformApiResponse = <T extends Record<string, any>>(
   dateFields: (keyof T)[]
 ): T => {
   const transformed = { ...data };
-  
+
   dateFields.forEach(field => {
     if (transformed[field] && typeof transformed[field] === 'string') {
       transformed[field] = parseApiDate(transformed[field] as string) as T[keyof T];
     }
   });
-  
+
   return transformed;
 };
 
@@ -91,10 +91,17 @@ export const transformApiResponse = <T extends Record<string, any>>(
  * 配列データの日付変換
  */
 export const transformApiArrayResponse = <T extends Record<string, any>>(
-  data: T[],
+  data: T[] | { data: T[] } | any,
   dateFields: (keyof T)[]
 ): T[] => {
-  return data.map(item => transformApiResponse(item, dateFields));
+  // dataがオブジェクトで、dataプロパティが配列の場合
+  if (data && typeof data === 'object' && Array.isArray(data.data)) {
+    return data.data.map((item: T) => transformApiResponse(item, dateFields));
+  }
+
+  // その他の場合、空配列を返す
+  console.warn('transformApiArrayResponse: data is not an array or has no data property:', data);
+  return [];
 };
 
 /**
@@ -105,7 +112,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   wait: number
 ): ((...args: Parameters<T>) => void) => {
   let timeout: NodeJS.Timeout;
-  
+
   return (...args: Parameters<T>) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
