@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: character-management-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: character_management
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - character-management-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "app_user", "-papp_password"]
+      timeout: 20s
+      retries: 10
+      interval: 30s
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: character-management-backend
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=app_user
+      - DB_PASSWORD=app_password
+      - DB_NAME=character_management
+      - GIN_MODE=release
+      - PORT=8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - character-management-network
+    volumes:
+      - backend_uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "http://localhost:8080/health"]
+      timeout: 10s
+      retries: 5
+      interval: 30s
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: character-management-frontend
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - character-management-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      timeout: 10s
+      retries: 5
+      interval: 30s
+      start_period: 30s
+
+volumes:
+  mysql_data:
+  backend_uploads:
+
+networks:
+  character-management-network:
+    driver: bridge
