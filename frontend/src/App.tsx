@@ -13,7 +13,7 @@ function App() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [deletingGroup, setDeletingGroup] = useState<Group | null>(null);
-  
+
   const { deleteGroup, loading } = useGroupStore();
 
   const handleGroupSelect = (groupId: string) => {
@@ -84,7 +84,7 @@ function App() {
             </div>
           </div>
         </header>
-        
+
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <Routes>
             <Route path="/" element={
@@ -93,7 +93,7 @@ function App() {
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">
                     グループ一覧
                   </h2>
-                  <GroupList 
+                  <GroupList
                     onGroupSelect={handleGroupSelect}
                     onGroupEdit={handleEditGroup}
                     onGroupDelete={handleDeleteGroup}

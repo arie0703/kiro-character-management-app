@@ -8,7 +8,7 @@ interface GroupState {
   // データ
   groups: Group[];
   selectedGroup: Group | null;
-  
+
   // ローディング状態
   loading: {
     list: boolean;
@@ -16,10 +16,10 @@ interface GroupState {
     update: boolean;
     delete: boolean;
   };
-  
+
   // エラー状態
   error: string | null;
-  
+
   // アクション
   fetchGroups: () => Promise<void>;
   fetchGroupById: (id: string) => Promise<void>;
@@ -49,22 +49,23 @@ export const useGroupStore = create<GroupState>()(
       ...initialState,
 
       fetchGroups: async () => {
-        set(state => ({ 
-          ...state, 
+        set(state => ({
+          ...state,
           loading: { ...state.loading, list: true },
-          error: null 
+          error: null
         }));
 
         try {
           const groups = await groupApi.getAll();
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             groups,
             loading: { ...state.loading, list: false }
           }));
         } catch (error) {
-          set(state => ({ 
-            ...state, 
+          console.log(error);
+          set(state => ({
+            ...state,
             error: formatApiError(error as ApiError),
             loading: { ...state.loading, list: false }
           }));
@@ -72,22 +73,22 @@ export const useGroupStore = create<GroupState>()(
       },
 
       fetchGroupById: async (id: string) => {
-        set(state => ({ 
-          ...state, 
+        set(state => ({
+          ...state,
           loading: { ...state.loading, list: true },
-          error: null 
+          error: null
         }));
 
         try {
           const group = await groupApi.getById(id);
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             selectedGroup: group,
             loading: { ...state.loading, list: false }
           }));
         } catch (error) {
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             error: formatApiError(error as ApiError),
             loading: { ...state.loading, list: false }
           }));
@@ -95,23 +96,23 @@ export const useGroupStore = create<GroupState>()(
       },
 
       createGroup: async (data: CreateGroupData) => {
-        set(state => ({ 
-          ...state, 
+        set(state => ({
+          ...state,
           loading: { ...state.loading, create: true },
-          error: null 
+          error: null
         }));
 
         try {
           const newGroup = await groupApi.create(data);
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             groups: [...state.groups, newGroup],
             loading: { ...state.loading, create: false }
           }));
           return newGroup;
         } catch (error) {
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             error: formatApiError(error as ApiError),
             loading: { ...state.loading, create: false }
           }));
@@ -120,17 +121,17 @@ export const useGroupStore = create<GroupState>()(
       },
 
       updateGroup: async (id: string, data: UpdateGroupData) => {
-        set(state => ({ 
-          ...state, 
+        set(state => ({
+          ...state,
           loading: { ...state.loading, update: true },
-          error: null 
+          error: null
         }));
 
         try {
           const updatedGroup = await groupApi.update(id, data);
-          set(state => ({ 
-            ...state, 
-            groups: state.groups.map(group => 
+          set(state => ({
+            ...state,
+            groups: state.groups.map(group =>
               group.id === id ? updatedGroup : group
             ),
             selectedGroup: state.selectedGroup?.id === id ? updatedGroup : state.selectedGroup,
@@ -138,8 +139,8 @@ export const useGroupStore = create<GroupState>()(
           }));
           return updatedGroup;
         } catch (error) {
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             error: formatApiError(error as ApiError),
             loading: { ...state.loading, update: false }
           }));
@@ -148,24 +149,24 @@ export const useGroupStore = create<GroupState>()(
       },
 
       deleteGroup: async (id: string) => {
-        set(state => ({ 
-          ...state, 
+        set(state => ({
+          ...state,
           loading: { ...state.loading, delete: true },
-          error: null 
+          error: null
         }));
 
         try {
           await groupApi.delete(id);
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             groups: state.groups.filter(group => group.id !== id),
             selectedGroup: state.selectedGroup?.id === id ? null : state.selectedGroup,
             loading: { ...state.loading, delete: false }
           }));
           return true;
         } catch (error) {
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             error: formatApiError(error as ApiError),
             loading: { ...state.loading, delete: false }
           }));

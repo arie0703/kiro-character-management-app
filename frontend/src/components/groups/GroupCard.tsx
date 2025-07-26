@@ -4,15 +4,17 @@ import { Group } from '../../types';
 interface GroupCardProps {
   group: Group;
   onSelect: () => void;
+  onShowDetail?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
-const GroupCard: React.FC<GroupCardProps> = ({ 
-  group, 
-  onSelect, 
-  onEdit, 
-  onDelete 
+const GroupCard: React.FC<GroupCardProps> = ({
+  group,
+  onSelect,
+  onShowDetail,
+  onEdit,
+  onDelete
 }) => {
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('ja-JP', {
@@ -23,7 +25,10 @@ const GroupCard: React.FC<GroupCardProps> = ({
   };
 
   return (
-    <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200">
+    <div
+      className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200 cursor-pointer"
+      onClick={onShowDetail}
+    >
       <div className="p-5">
         <div className="flex items-center">
           <div className="flex-shrink-0">
@@ -54,7 +59,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
             </dl>
           </div>
         </div>
-        
+
         {group.description && (
           <div className="mt-4">
             <p className="text-sm text-gray-600 line-clamp-2">
@@ -62,7 +67,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
             </p>
           </div>
         )}
-        
+
         <div className="mt-4 flex items-center justify-between">
           <div className="text-xs text-gray-500">
             作成日: {formatDate(group.createdAt)}
@@ -99,10 +104,13 @@ const GroupCard: React.FC<GroupCardProps> = ({
           </div>
         </div>
       </div>
-      
+
       <div className="bg-gray-50 px-5 py-3">
         <button
-          onClick={onSelect}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect();
+          }}
           className="w-full text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200"
         >
           グループを選択 →

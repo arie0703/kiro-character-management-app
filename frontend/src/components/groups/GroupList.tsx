@@ -10,12 +10,12 @@ interface GroupListProps {
 }
 
 const GroupList: React.FC<GroupListProps> = ({ onGroupSelect, onGroupEdit, onGroupDelete }) => {
-  const { 
-    groups, 
-    loading, 
-    error, 
-    fetchGroups, 
-    clearError 
+  const {
+    groups,
+    loading,
+    error,
+    fetchGroups,
+    clearError
   } = useGroupStore();
 
   useEffect(() => {
