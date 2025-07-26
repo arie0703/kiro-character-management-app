@@ -25,15 +25,20 @@ const CharacterList: React.FC<CharacterListProps> = ({
     clearError,
   } = useCharacterStore();
 
+  // デバッグ用: charactersの状態をログ出力
+  console.log('CharacterList - characters:', characters);
+  console.log('CharacterList - loading:', loading);
+
   const { selectedGroup } = useGroupStore();
 
   // グループIDが変更されたときに人物一覧を取得
   useEffect(() => {
     const targetGroupId = groupId || selectedGroup?.id;
     if (targetGroupId) {
+      console.log('Fetching characters for group:', targetGroupId);
       fetchCharacters(targetGroupId);
     }
-  }, [groupId, selectedGroup?.id, fetchCharacters]);
+  }, [groupId, selectedGroup?.id]); // fetchCharactersを依存配列から削除
 
   // エラーをクリア
   useEffect(() => {

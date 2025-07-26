@@ -8,7 +8,7 @@ interface CharacterState {
   // データ
   characters: Character[];
   selectedCharacter: Character | null;
-  
+
   // ローディング状態
   loading: {
     list: boolean;
@@ -18,10 +18,10 @@ interface CharacterState {
     addLabel: boolean;
     removeLabel: boolean;
   };
-  
+
   // エラー状態
   error: string | null;
-  
+
   // アクション
   fetchCharacters: (groupId?: string) => Promise<void>;
   fetchCharacterById: (id: string) => Promise<void>;
@@ -55,22 +55,22 @@ export const useCharacterStore = create<CharacterState>()(
       ...initialState,
 
       fetchCharacters: async (groupId?: string) => {
-        set(state => ({ 
-          ...state, 
+        set(state => ({
+          ...state,
           loading: { ...state.loading, list: true },
-          error: null 
+          error: null
         }));
 
         try {
           const characters = await characterApi.getAll(groupId);
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             characters,
             loading: { ...state.loading, list: false }
           }));
         } catch (error) {
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             error: formatApiError(error as ApiError),
             loading: { ...state.loading, list: false }
           }));
@@ -78,22 +78,22 @@ export const useCharacterStore = create<CharacterState>()(
       },
 
       fetchCharacterById: async (id: string) => {
-        set(state => ({ 
-          ...state, 
+        set(state => ({
+          ...state,
           loading: { ...state.loading, list: true },
-          error: null 
+          error: null
         }));
 
         try {
           const character = await characterApi.getById(id);
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             selectedCharacter: character,
             loading: { ...state.loading, list: false }
           }));
         } catch (error) {
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             error: formatApiError(error as ApiError),
             loading: { ...state.loading, list: false }
           }));
@@ -101,31 +101,33 @@ export const useCharacterStore = create<CharacterState>()(
       },
 
       createCharacter: async (data: CreateCharacterData, photo?: File) => {
-        set(state => ({ 
-          ...state, 
+        set(state => ({
+          ...state,
           loading: { ...state.loading, create: true },
-          error: null 
+          error: null
         }));
 
         try {
           let newCharacter: Character;
-          
+
           if (photo) {
             const formData = createCharacterFormData(data, photo);
             newCharacter = await characterApi.createWithImage(formData);
           } else {
             newCharacter = await characterApi.create(data);
           }
-          
-          set(state => ({ 
-            ...state, 
-            characters: [...state.characters, newCharacter],
+
+          // 作成後に一覧を再取得して最新の状態を保つ
+          const characters = await characterApi.getAll(data.groupId);
+          set(state => ({
+            ...state,
+            characters,
             loading: { ...state.loading, create: false }
           }));
           return newCharacter;
         } catch (error) {
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             error: formatApiError(error as ApiError),
             loading: { ...state.loading, create: false }
           }));
@@ -134,15 +136,15 @@ export const useCharacterStore = create<CharacterState>()(
       },
 
       updateCharacter: async (id: string, data: UpdateCharacterData, photo?: File) => {
-        set(state => ({ 
-          ...state, 
+        set(state => ({
+          ...state,
           loading: { ...state.loading, update: true },
-          error: null 
+          error: null
         }));
 
         try {
           let updatedCharacter: Character;
-          
+
           if (photo) {
             const formData = createCharacterFormData({
               groupId: data.groupId || '',
@@ -154,19 +156,19 @@ export const useCharacterStore = create<CharacterState>()(
           } else {
             updatedCharacter = await characterApi.update(id, data);
           }
-          
-          set(state => ({ 
-            ...state, 
-            characters: state.characters.map(character => 
-              character.id === id ? updatedCharacter : character
-            ),
+
+          // 更新後に一覧を再取得して最新の状態を保つ
+          const characters = await characterApi.getAll(data.groupId);
+          set(state => ({
+            ...state,
+            characters,
             selectedCharacter: state.selectedCharacter?.id === id ? updatedCharacter : state.selectedCharacter,
             loading: { ...state.loading, update: false }
           }));
           return updatedCharacter;
         } catch (error) {
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             error: formatApiError(error as ApiError),
             loading: { ...state.loading, update: false }
           }));
@@ -175,24 +177,38 @@ export const useCharacterStore = create<CharacterState>()(
       },
 
       deleteCharacter: async (id: string) => {
-        set(state => ({ 
-          ...state, 
+        set(state => ({
+          ...state,
           loading: { ...state.loading, delete: true },
-          error: null 
+          error: null
         }));
 
         try {
           await characterApi.delete(id);
-          set(state => ({ 
-            ...state, 
-            characters: state.characters.filter(character => character.id !== id),
-            selectedCharacter: state.selectedCharacter?.id === id ? null : state.selectedCharacter,
-            loading: { ...state.loading, delete: false }
-          }));
+
+          // 削除後に一覧を再取得して最新の状態を保つ
+          // 現在のグループIDを取得するために、削除対象のキャラクターから取得
+          const deletedCharacter = get().characters.find(c => c.id === id);
+          if (deletedCharacter) {
+            const characters = await characterApi.getAll(deletedCharacter.groupId);
+            set(state => ({
+              ...state,
+              characters,
+              selectedCharacter: state.selectedCharacter?.id === id ? null : state.selectedCharacter,
+              loading: { ...state.loading, delete: false }
+            }));
+          } else {
+            set(state => ({
+              ...state,
+              characters: state.characters.filter(character => character.id !== id),
+              selectedCharacter: state.selectedCharacter?.id === id ? null : state.selectedCharacter,
+              loading: { ...state.loading, delete: false }
+            }));
+          }
           return true;
         } catch (error) {
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             error: formatApiError(error as ApiError),
             loading: { ...state.loading, delete: false }
           }));
@@ -201,21 +217,21 @@ export const useCharacterStore = create<CharacterState>()(
       },
 
       addLabelToCharacter: async (characterId: string, labelId: string) => {
-        set(state => ({ 
-          ...state, 
+        set(state => ({
+          ...state,
           loading: { ...state.loading, addLabel: true },
-          error: null 
+          error: null
         }));
 
         try {
           await characterApi.addLabel(characterId, labelId);
-          
+
           // キャラクターを再取得してラベル情報を更新
           const updatedCharacter = await characterApi.getById(characterId);
-          
-          set(state => ({ 
-            ...state, 
-            characters: state.characters.map(character => 
+
+          set(state => ({
+            ...state,
+            characters: state.characters.map(character =>
               character.id === characterId ? updatedCharacter : character
             ),
             selectedCharacter: state.selectedCharacter?.id === characterId ? updatedCharacter : state.selectedCharacter,
@@ -223,8 +239,8 @@ export const useCharacterStore = create<CharacterState>()(
           }));
           return true;
         } catch (error) {
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             error: formatApiError(error as ApiError),
             loading: { ...state.loading, addLabel: false }
           }));
@@ -233,21 +249,21 @@ export const useCharacterStore = create<CharacterState>()(
       },
 
       removeLabelFromCharacter: async (characterId: string, labelId: string) => {
-        set(state => ({ 
-          ...state, 
+        set(state => ({
+          ...state,
           loading: { ...state.loading, removeLabel: true },
-          error: null 
+          error: null
         }));
 
         try {
           await characterApi.removeLabel(characterId, labelId);
-          
+
           // キャラクターを再取得してラベル情報を更新
           const updatedCharacter = await characterApi.getById(characterId);
-          
-          set(state => ({ 
-            ...state, 
-            characters: state.characters.map(character => 
+
+          set(state => ({
+            ...state,
+            characters: state.characters.map(character =>
               character.id === characterId ? updatedCharacter : character
             ),
             selectedCharacter: state.selectedCharacter?.id === characterId ? updatedCharacter : state.selectedCharacter,
@@ -255,8 +271,8 @@ export const useCharacterStore = create<CharacterState>()(
           }));
           return true;
         } catch (error) {
-          set(state => ({ 
-            ...state, 
+          set(state => ({
+            ...state,
             error: formatApiError(error as ApiError),
             loading: { ...state.loading, removeLabel: false }
           }));

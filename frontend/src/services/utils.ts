@@ -77,7 +77,6 @@ export const transformApiResponse = <T extends Record<string, any>>(
   dateFields: (keyof T)[]
 ): T => {
   const transformed = { ...data };
-
   dateFields.forEach(field => {
     if (transformed[field] && typeof transformed[field] === 'string') {
       transformed[field] = parseApiDate(transformed[field] as string) as T[keyof T];
@@ -91,17 +90,17 @@ export const transformApiResponse = <T extends Record<string, any>>(
  * 配列データの日付変換
  */
 export const transformApiArrayResponse = <T extends Record<string, any>>(
-  data: T[] | { data: T[] } | any,
+  data: T[],
   dateFields: (keyof T)[]
 ): T[] => {
-  // dataがオブジェクトで、dataプロパティが配列の場合
-  if (data && typeof data === 'object' && Array.isArray(data.data)) {
-    return data.data.map((item: T) => transformApiResponse(item, dateFields));
+  // dataが配列でない場合はエラーを投げる
+  if (!Array.isArray(data)) {
+    console.log(data);
+    throw new Error('transformApiArrayResponse: data must be an array');
   }
 
-  // その他の場合、空配列を返す
-  console.warn('transformApiArrayResponse: data is not an array or has no data property:', data);
-  return [];
+  // 配列の各要素に対して日付変換を適用
+  return data.map((item: T) => transformApiResponse(item, dateFields));
 };
 
 /**

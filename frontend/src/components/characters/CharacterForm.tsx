@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Character, CreateCharacterData, UpdateCharacterData } from '../../types';
 import { useCharacterStore } from '../../stores/characterStore';
 import { useGroupStore } from '../../stores/groupStore';
+import { ImageUpload } from '../common';
 
 interface CharacterFormProps {
   character?: Character; // 編集時に渡される
@@ -36,19 +37,10 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
     return () => clearError();
   }, [clearError]);
 
-  // ファイル選択時の処理
-  const handleFileSelect = (file: File | null) => {
+  // 画像アップロード処理
+  const handleImageChange = (file: File | null, previewUrl: string | null) => {
     setSelectedFile(file);
-    
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewUrl(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setPreviewUrl(character?.photo || null);
-    }
+    setPreviewUrl(previewUrl);
   };
 
   // フォーム入力の処理
@@ -88,16 +80,21 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
+    // 名前のバリデーション
     if (!formData.name.trim()) {
       errors.name = '名前は必須です';
     } else if (formData.name.length > 255) {
       errors.name = '名前は255文字以内で入力してください';
+    } else if (formData.name.trim().length < 1) {
+      errors.name = '名前は1文字以上で入力してください';
     }
 
+    // グループ選択のバリデーション
     if (!formData.groupId) {
       errors.groupId = 'グループを選択してください';
     }
 
+    // 情報のバリデーション
     if (formData.information.length > 10000) {
       errors.information = '情報は10000文字以内で入力してください';
     }
@@ -106,10 +103,16 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
     const validLinks = formData.relatedLinks.filter(link => link.trim());
     for (let i = 0; i < validLinks.length; i++) {
       const link = validLinks[i];
-      try {
-        new URL(link);
-      } catch {
-        errors[`relatedLink_${i}`] = '有効なURLを入力してください';
+      if (link.trim()) {
+        try {
+          const url = new URL(link);
+          // プロトコルチェック
+          if (!['http:', 'https:'].includes(url.protocol)) {
+            errors[`relatedLink_${i}`] = 'HTTPまたはHTTPSのURLを入力してください';
+          }
+        } catch {
+          errors[`relatedLink_${i}`] = '有効なURLを入力してください';
+        }
       }
     }
 
@@ -134,8 +137,8 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
       if (character) {
         // 更新
         const updateData: UpdateCharacterData = {
-          name: formData.name,
-          information: formData.information,
+          name: formData.name.trim(),
+          information: formData.information.trim(),
           relatedLinks: cleanedLinks,
           groupId: formData.groupId,
         };
@@ -143,8 +146,8 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
       } else {
         // 新規作成
         const createData: CreateCharacterData = {
-          name: formData.name,
-          information: formData.information,
+          name: formData.name.trim(),
+          information: formData.information.trim(),
           relatedLinks: cleanedLinks,
           groupId: formData.groupId,
         };
@@ -156,15 +159,27 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
       }
     } catch (error) {
       console.error('Character form submission error:', error);
+      // エラーが発生した場合、ユーザーに通知
+      if (error instanceof Error) {
+        setValidationErrors(prev => ({
+          ...prev,
+          submit: error.message
+        }));
+      } else {
+        setValidationErrors(prev => ({
+          ...prev,
+          submit: '人物の保存中にエラーが発生しました。'
+        }));
+      }
     }
   };
 
   const isLoading = loading.create || loading.update;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" aria-label="人物情報フォーム">
       {/* エラー表示 */}
-      {error && (
+      {(error || validationErrors.submit) && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -175,7 +190,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
             <div className="ml-3">
               <h3 className="text-sm font-medium text-red-800">エラーが発生しました</h3>
               <div className="mt-2 text-sm text-red-700">
-                <p>{error}</p>
+                <p>{error || validationErrors.submit}</p>
               </div>
             </div>
           </div>
@@ -191,10 +206,11 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
           id="groupId"
           value={formData.groupId}
           onChange={(e) => handleInputChange('groupId', e.target.value)}
-          className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-            validationErrors.groupId ? 'border-red-300' : ''
-          }`}
+          className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${validationErrors.groupId ? 'border-red-300' : ''
+            }`}
           disabled={isLoading}
+          aria-describedby={validationErrors.groupId ? 'groupId-error' : undefined}
+          aria-invalid={!!validationErrors.groupId}
         >
           <option value="">グループを選択してください</option>
           {groups.map((group) => (
@@ -204,7 +220,9 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
           ))}
         </select>
         {validationErrors.groupId && (
-          <p className="mt-1 text-sm text-red-600">{validationErrors.groupId}</p>
+          <p id="groupId-error" className="mt-1 text-sm text-red-600" role="alert">
+            {validationErrors.groupId}
+          </p>
         )}
       </div>
 
@@ -218,72 +236,33 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
           id="name"
           value={formData.name}
           onChange={(e) => handleInputChange('name', e.target.value)}
-          className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-            validationErrors.name ? 'border-red-300' : ''
-          }`}
+          className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${validationErrors.name ? 'border-red-300' : ''
+            }`}
           placeholder="人物の名前を入力してください"
           disabled={isLoading}
+          aria-describedby={validationErrors.name ? 'name-error' : undefined}
+          aria-invalid={!!validationErrors.name}
+          required
         />
         {validationErrors.name && (
-          <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+          <p id="name-error" className="mt-1 text-sm text-red-600" role="alert">
+            {validationErrors.name}
+          </p>
         )}
       </div>
 
       {/* 画像アップロード */}
       <div>
         <label className="block text-sm font-medium text-gray-700">写真</label>
-        <div className="mt-1 flex items-center space-x-4">
-          {/* プレビュー */}
-          <div className="flex-shrink-0">
-            {previewUrl ? (
-              <img
-                className="h-20 w-20 rounded-lg object-cover"
-                src={previewUrl}
-                alt="プレビュー"
-              />
-            ) : (
-              <div className="h-20 w-20 rounded-lg bg-gray-200 flex items-center justify-center">
-                <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-            )}
-          </div>
-          
-          {/* ファイル選択ボタン */}
-          <div>
-            <input
-              type="file"
-              id="photo"
-              accept="image/*"
-              onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
-              className="hidden"
-              disabled={isLoading}
-            />
-            <label
-              htmlFor="photo"
-              className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              画像を選択
-            </label>
-            {selectedFile && (
-              <button
-                type="button"
-                onClick={() => handleFileSelect(null)}
-                className="ml-2 text-sm text-red-600 hover:text-red-800"
-                disabled={isLoading}
-              >
-                削除
-              </button>
-            )}
-          </div>
+        <div className="mt-1">
+          <ImageUpload
+            value={previewUrl}
+            onChange={handleImageChange}
+            disabled={isLoading}
+            maxSize={5}
+            acceptedTypes={['image/jpeg', 'image/png', 'image/gif', 'image/webp']}
+          />
         </div>
-        <p className="mt-1 text-sm text-gray-500">
-          JPG、PNG、GIF形式の画像をアップロードできます。
-        </p>
       </div>
 
       {/* 情報 */}
@@ -296,16 +275,19 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
           rows={4}
           value={formData.information}
           onChange={(e) => handleInputChange('information', e.target.value)}
-          className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-            validationErrors.information ? 'border-red-300' : ''
-          }`}
+          className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${validationErrors.information ? 'border-red-300' : ''
+            }`}
           placeholder="人物に関する情報を入力してください"
           disabled={isLoading}
+          aria-describedby={validationErrors.information ? 'information-error' : 'information-help'}
+          aria-invalid={!!validationErrors.information}
         />
         {validationErrors.information && (
-          <p className="mt-1 text-sm text-red-600">{validationErrors.information}</p>
+          <p id="information-error" className="mt-1 text-sm text-red-600" role="alert">
+            {validationErrors.information}
+          </p>
         )}
-        <p className="mt-1 text-sm text-gray-500">
+        <p id="information-help" className="mt-1 text-sm text-gray-500">
           {formData.information.length}/10000文字
         </p>
       </div>
@@ -330,11 +312,12 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
                 type="url"
                 value={link}
                 onChange={(e) => updateRelatedLink(index, e.target.value)}
-                className={`flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                  validationErrors[`relatedLink_${index}`] ? 'border-red-300' : ''
-                }`}
+                className={`flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${validationErrors[`relatedLink_${index}`] ? 'border-red-300' : ''
+                  }`}
                 placeholder="https://example.com"
                 disabled={isLoading}
+                aria-describedby={validationErrors[`relatedLink_${index}`] ? `relatedLink-${index}-error` : undefined}
+                aria-invalid={!!validationErrors[`relatedLink_${index}`]}
               />
               {formData.relatedLinks.length > 1 && (
                 <button
@@ -342,11 +325,17 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
                   onClick={() => removeRelatedLink(index)}
                   className="text-red-600 hover:text-red-800"
                   disabled={isLoading}
+                  aria-label={`リンク${index + 1}を削除`}
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
+              )}
+              {validationErrors[`relatedLink_${index}`] && (
+                <p id={`relatedLink-${index}-error`} className="text-sm text-red-600" role="alert">
+                  {validationErrors[`relatedLink_${index}`]}
+                </p>
               )}
             </div>
           ))}
@@ -372,11 +361,12 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
           type="submit"
           className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isLoading}
+          aria-describedby={isLoading ? 'submit-loading' : undefined}
         >
           {isLoading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
-              {character ? '更新中...' : '作成中...'}
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block" aria-hidden="true"></div>
+              <span id="submit-loading">{character ? '更新中...' : '作成中...'}</span>
             </>
           ) : (
             character ? '更新' : '作成'
