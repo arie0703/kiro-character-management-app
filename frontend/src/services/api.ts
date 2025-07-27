@@ -105,7 +105,7 @@ export const characterApi = {
   getAll: (groupId?: string): Promise<Character[]> => {
     const params = groupId ? { groupId } : {};
     return api.get<ApiResponse<Character[]>>('/characters', { params }).then(response =>
-      transformApiArrayResponse(response.data.data, ['createdAt', 'updatedAt'])
+      transformApiArrayResponse(response.data, ['createdAt', 'updatedAt'])
     );
   },
 

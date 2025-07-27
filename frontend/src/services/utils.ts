@@ -90,17 +90,20 @@ export const transformApiResponse = <T extends Record<string, any>>(
  * 配列データの日付変換
  */
 export const transformApiArrayResponse = <T extends Record<string, any>>(
-  data: T[],
+  data: T[] | { data: T[] },
   dateFields: (keyof T)[]
 ): T[] => {
+  // ApiResponseオブジェクトの場合はdataフィールドを取得
+  const targetData = 'data' in data && Array.isArray(data.data) ? data.data : data;
+
   // dataが配列でない場合はエラーを投げる
-  if (!Array.isArray(data)) {
-    console.log(data);
+  if (!Array.isArray(targetData)) {
+    console.log(targetData);
     throw new Error('transformApiArrayResponse: data must be an array');
   }
 
   // 配列の各要素に対して日付変換を適用
-  return data.map((item: T) => transformApiResponse(item, dateFields));
+  return targetData.map((item: T) => transformApiResponse(item, dateFields));
 };
 
 /**

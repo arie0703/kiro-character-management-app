@@ -25,20 +25,18 @@ const CharacterList: React.FC<CharacterListProps> = ({
     clearError,
   } = useCharacterStore();
 
-  // デバッグ用: charactersの状態をログ出力
-  console.log('CharacterList - characters:', characters);
-  console.log('CharacterList - loading:', loading);
-
   const { selectedGroup } = useGroupStore();
 
+
+  // 無限レンダリングされるので以下はコメントアウト: fetchCharactersはGroupDetailで呼び出している
+
   // グループIDが変更されたときに人物一覧を取得
-  useEffect(() => {
-    const targetGroupId = groupId || selectedGroup?.id;
-    if (targetGroupId) {
-      console.log('Fetching characters for group:', targetGroupId);
-      fetchCharacters(targetGroupId);
-    }
-  }, [groupId, selectedGroup?.id]); // fetchCharactersを依存配列から削除
+  // useEffect(() => {
+  //   const targetGroupId = groupId || selectedGroup?.id;
+  //   if (targetGroupId) {
+  //     fetchCharacters(targetGroupId);
+  //   }
+  // }, [groupId, selectedGroup?.id, fetchCharacters]);
 
   // エラーをクリア
   useEffect(() => {
