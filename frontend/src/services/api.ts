@@ -12,7 +12,8 @@ import {
   UpdateLabelData,
   CreateRelationshipData,
   UpdateRelationshipData,
-  ApiError
+  ApiError,
+  ApiResponse
 } from '../types';
 import { transformApiResponse, transformApiArrayResponse } from './utils';
 
@@ -71,26 +72,26 @@ api.interceptors.response.use(
 export const groupApi = {
   // グループ一覧取得
   getAll: (): Promise<Group[]> =>
-    api.get<Group[]>('/groups').then(response => 
-      transformApiArrayResponse(response.data, ['createdAt', 'updatedAt'])
+    api.get<ApiResponse<Group[]>>('/groups').then(response =>
+      transformApiArrayResponse(response.data.data, ['createdAt', 'updatedAt'])
     ),
 
   // グループ詳細取得
   getById: (id: string): Promise<Group> =>
-    api.get<Group>(`/groups/${id}`).then(response => 
-      transformApiResponse(response.data, ['createdAt', 'updatedAt'])
+    api.get<ApiResponse<Group>>(`/groups/${id}`).then(response =>
+      transformApiResponse(response.data.data, ['createdAt', 'updatedAt'])
     ),
 
   // グループ作成
   create: (data: CreateGroupData): Promise<Group> =>
-    api.post<Group>('/groups', data).then(response => 
-      transformApiResponse(response.data, ['createdAt', 'updatedAt'])
+    api.post<ApiResponse<Group>>('/groups', data).then(response =>
+      transformApiResponse(response.data.data, ['createdAt', 'updatedAt'])
     ),
 
   // グループ更新
   update: (id: string, data: UpdateGroupData): Promise<Group> =>
-    api.put<Group>(`/groups/${id}`, data).then(response => 
-      transformApiResponse(response.data, ['createdAt', 'updatedAt'])
+    api.put<ApiResponse<Group>>(`/groups/${id}`, data).then(response =>
+      transformApiResponse(response.data.data, ['createdAt', 'updatedAt'])
     ),
 
   // グループ削除
@@ -103,43 +104,44 @@ export const characterApi = {
   // 人物一覧取得（グループIDでフィルタ可能）
   getAll: (groupId?: string): Promise<Character[]> => {
     const params = groupId ? { groupId } : {};
-    return api.get<Character[]>('/characters', { params }).then(response => 
+    return api.get<ApiResponse<Character[]>>('/characters', { params }).then(response =>
       transformApiArrayResponse(response.data, ['createdAt', 'updatedAt'])
     );
   },
 
   // 人物詳細取得
   getById: (id: string): Promise<Character> =>
-    api.get<Character>(`/characters/${id}`).then(response => 
-      transformApiResponse(response.data, ['createdAt', 'updatedAt'])
+    api.get<ApiResponse<Character>>(`/characters/${id}`).then(response =>
+      transformApiResponse(response.data.data, ['createdAt', 'updatedAt'])
     ),
 
   // 人物作成（JSON）
   create: (data: CreateCharacterData): Promise<Character> =>
-    api.post<Character>('/characters', data).then(response => 
-      transformApiResponse(response.data, ['createdAt', 'updatedAt'])
-    ),
+    api.post<ApiResponse<Character>>('/characters', data).then(response => {
+      console.log(response.data);
+      return transformApiResponse(response.data.data, ['createdAt', 'updatedAt']);
+    }),
 
   // 人物作成（FormData - 画像付き）
   createWithImage: (data: FormData): Promise<Character> =>
-    api.post<Character>('/characters', data, {
+    api.post<ApiResponse<Character>>('/characters', data, {
       headers: { 'Content-Type': 'multipart/form-data' }
-    }).then(response => 
-      transformApiResponse(response.data, ['createdAt', 'updatedAt'])
+    }).then(response =>
+      transformApiResponse(response.data.data, ['createdAt', 'updatedAt'])
     ),
 
   // 人物更新（JSON）
   update: (id: string, data: UpdateCharacterData): Promise<Character> =>
-    api.put<Character>(`/characters/${id}`, data).then(response => 
-      transformApiResponse(response.data, ['createdAt', 'updatedAt'])
+    api.put<ApiResponse<Character>>(`/characters/${id}`, data).then(response =>
+      transformApiResponse(response.data.data, ['createdAt', 'updatedAt'])
     ),
 
   // 人物更新（FormData - 画像付き）
   updateWithImage: (id: string, data: FormData): Promise<Character> =>
-    api.put<Character>(`/characters/${id}`, data, {
+    api.put<ApiResponse<Character>>(`/characters/${id}`, data, {
       headers: { 'Content-Type': 'multipart/form-data' }
-    }).then(response => 
-      transformApiResponse(response.data, ['createdAt', 'updatedAt'])
+    }).then(response =>
+      transformApiResponse(response.data.data, ['createdAt', 'updatedAt'])
     ),
 
   // 人物削除
@@ -159,26 +161,26 @@ export const characterApi = {
 export const labelApi = {
   // ラベル一覧取得
   getAll: (): Promise<Label[]> =>
-    api.get<Label[]>('/labels').then(response => 
-      transformApiArrayResponse(response.data, ['createdAt'])
+    api.get<ApiResponse<Label[]>>('/labels').then(response =>
+      transformApiArrayResponse(response.data.data, ['createdAt'])
     ),
 
   // ラベル詳細取得
   getById: (id: string): Promise<Label> =>
-    api.get<Label>(`/labels/${id}`).then(response => 
-      transformApiResponse(response.data, ['createdAt'])
+    api.get<ApiResponse<Label>>(`/labels/${id}`).then(response =>
+      transformApiResponse(response.data.data, ['createdAt'])
     ),
 
   // ラベル作成
   create: (data: CreateLabelData): Promise<Label> =>
-    api.post<Label>('/labels', data).then(response => 
-      transformApiResponse(response.data, ['createdAt'])
+    api.post<ApiResponse<Label>>('/labels', data).then(response =>
+      transformApiResponse(response.data.data, ['createdAt'])
     ),
 
   // ラベル更新
   update: (id: string, data: UpdateLabelData): Promise<Label> =>
-    api.put<Label>(`/labels/${id}`, data).then(response => 
-      transformApiResponse(response.data, ['createdAt'])
+    api.put<ApiResponse<Label>>(`/labels/${id}`, data).then(response =>
+      transformApiResponse(response.data.data, ['createdAt'])
     ),
 
   // ラベル削除
@@ -193,27 +195,27 @@ export const relationshipApi = {
     const params: any = {};
     if (groupId) params.groupId = groupId;
     if (characterId) params.characterId = characterId;
-    return api.get<Relationship[]>('/relationships', { params }).then(response => 
-      transformApiArrayResponse(response.data, ['createdAt'])
+    return api.get<ApiResponse<Relationship[]>>('/relationships', { params }).then(response =>
+      transformApiArrayResponse(response.data.data, ['createdAt'])
     );
   },
 
   // 関係詳細取得
   getById: (id: string): Promise<Relationship> =>
-    api.get<Relationship>(`/relationships/${id}`).then(response => 
-      transformApiResponse(response.data, ['createdAt'])
+    api.get<ApiResponse<Relationship>>(`/relationships/${id}`).then(response =>
+      transformApiResponse(response.data.data, ['createdAt'])
     ),
 
   // 関係作成
   create: (data: CreateRelationshipData): Promise<Relationship> =>
-    api.post<Relationship>('/relationships', data).then(response => 
-      transformApiResponse(response.data, ['createdAt'])
+    api.post<ApiResponse<Relationship>>('/relationships', data).then(response =>
+      transformApiResponse(response.data.data, ['createdAt'])
     ),
 
   // 関係更新
   update: (id: string, data: UpdateRelationshipData): Promise<Relationship> =>
-    api.put<Relationship>(`/relationships/${id}`, data).then(response => 
-      transformApiResponse(response.data, ['createdAt'])
+    api.put<ApiResponse<Relationship>>(`/relationships/${id}`, data).then(response =>
+      transformApiResponse(response.data.data, ['createdAt'])
     ),
 
   // 関係削除
