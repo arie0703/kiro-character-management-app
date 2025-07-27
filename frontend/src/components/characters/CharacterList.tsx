@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Character } from '../../types';
 import { useCharacterStore } from '../../stores/characterStore';
 import { useGroupStore } from '../../stores/groupStore';
 import CharacterCard from './CharacterCard';
+import CharacterDetailModal from './CharacterDetailModal';
 
 interface CharacterListProps {
   groupId?: string;
@@ -20,12 +22,14 @@ const CharacterList: React.FC<CharacterListProps> = ({
     characters,
     loading,
     error,
-    fetchCharacters,
-    deleteCharacter,
     clearError,
   } = useCharacterStore();
 
   const { selectedGroup } = useGroupStore();
+
+  // 詳細表示用の状態
+  const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
 
   // 無限レンダリングされるので以下はコメントアウト: fetchCharactersはGroupDetailで呼び出している
@@ -43,12 +47,40 @@ const CharacterList: React.FC<CharacterListProps> = ({
     return () => clearError();
   }, [clearError]);
 
-  const handleCharacterDelete = async (characterId: string) => {
-    if (window.confirm('この人物を削除しますか？関連する関係データも削除されます。')) {
-      const success = await deleteCharacter(characterId);
-      if (success && onCharacterDelete) {
-        onCharacterDelete(characterId);
-      }
+  // 人物詳細表示
+  const handleCharacterSelect = (character: Character) => {
+    setSelectedCharacter(character);
+    setIsDetailModalOpen(true);
+    if (onCharacterSelect) {
+      onCharacterSelect(character.id);
+    }
+  };
+
+  // 詳細モーダルを閉じる
+  const handleDetailModalClose = () => {
+    setIsDetailModalOpen(false);
+    setSelectedCharacter(null);
+  };
+
+  // 詳細モーダルから編集
+  const handleEditFromDetail = () => {
+    if (selectedCharacter && onCharacterEdit) {
+      handleDetailModalClose();
+      onCharacterEdit(selectedCharacter.id);
+    }
+  };
+
+  // 詳細モーダルから削除
+  const handleDeleteFromDetail = () => {
+    if (selectedCharacter && onCharacterDelete) {
+      onCharacterDelete(selectedCharacter.id);
+      handleDetailModalClose();
+    }
+  };
+
+  const handleCharacterDelete = (characterId: string) => {
+    if (onCharacterDelete) {
+      onCharacterDelete(characterId);
     }
   };
 
@@ -138,13 +170,23 @@ const CharacterList: React.FC<CharacterListProps> = ({
           <CharacterCard
             key={character.id}
             character={character}
-            onSelect={onCharacterSelect ? () => onCharacterSelect(character.id) : undefined}
+            onSelect={() => handleCharacterSelect(character)}
             onEdit={onCharacterEdit ? () => onCharacterEdit(character.id) : undefined}
             onDelete={() => handleCharacterDelete(character.id)}
             isDeleting={loading.delete}
           />
         ))}
       </div>
+
+      {/* 人物詳細モーダル */}
+      <CharacterDetailModal
+        character={selectedCharacter}
+        isOpen={isDetailModalOpen}
+        onClose={handleDetailModalClose}
+        onEdit={handleEditFromDetail}
+        onDelete={handleDeleteFromDetail}
+        isDeleting={loading.delete}
+      />
     </div>
   );
 };
