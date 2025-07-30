@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Character, CreateCharacterData, UpdateCharacterData } from '../../types';
+import { Character, CreateCharacterData, UpdateCharacterData, Label } from '../../types';
 import { useCharacterStore } from '../../stores/characterStore';
 import { useGroupStore } from '../../stores/groupStore';
 import { ImageUpload } from '../common';
+import { LabelSelector } from '../labels/LabelSelector';
 
 interface CharacterFormProps {
   character?: Character; // 編集時に渡される
@@ -27,6 +28,8 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
     relatedLinks: character?.relatedLinks || [''],
     groupId: character?.groupId || groupId || selectedGroup?.id || '',
   });
+
+  const [selectedLabels, setSelectedLabels] = useState<Label[]>(character?.labels || []);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(character?.photo || null);
@@ -289,6 +292,21 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
         )}
         <p id="information-help" className="mt-1 text-sm text-gray-500">
           {formData.information.length}/10000文字
+        </p>
+      </div>
+
+      {/* ラベル */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          ラベル
+        </label>
+        <LabelSelector
+          selectedLabels={selectedLabels}
+          onLabelsChange={setSelectedLabels}
+          maxLabels={5}
+        />
+        <p className="mt-1 text-sm text-gray-500">
+          人物にラベルを付けて分類できます。
         </p>
       </div>
 

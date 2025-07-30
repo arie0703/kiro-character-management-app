@@ -76,6 +76,10 @@ export const transformApiResponse = <T extends Record<string, any>>(
   data: T,
   dateFields: (keyof T)[]
 ): T => {
+  if (!data || typeof data !== 'object') {
+    throw new Error('transformApiResponse: data must be an object');
+  }
+
   const transformed = { ...data };
   dateFields.forEach(field => {
     if (transformed[field] && typeof transformed[field] === 'string') {
@@ -93,8 +97,13 @@ export const transformApiArrayResponse = <T extends Record<string, any>>(
   data: T[] | { data: T[] },
   dateFields: (keyof T)[]
 ): T[] => {
+  // dataがnullまたはundefinedの場合は空配列を返す
+  if (!data) {
+    return [];
+  }
+
   // ApiResponseオブジェクトの場合はdataフィールドを取得
-  const targetData = 'data' in data && Array.isArray(data.data) ? data.data : data;
+  const targetData = typeof data === 'object' && 'data' in data && Array.isArray(data.data) ? data.data : data;
 
   // dataが配列でない場合はエラーを投げる
   if (!Array.isArray(targetData)) {

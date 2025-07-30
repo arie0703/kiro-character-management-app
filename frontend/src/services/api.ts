@@ -161,27 +161,34 @@ export const characterApi = {
 export const labelApi = {
   // ラベル一覧取得
   getAll: (): Promise<Label[]> =>
-    api.get<ApiResponse<Label[]>>('/labels').then(response =>
-      transformApiArrayResponse(response.data.data, ['createdAt'])
-    ),
+    api.get<ApiResponse<Label[]>>('/labels').then(response => {
+      const data = response.data;
+      return transformApiArrayResponse(data || [], ['createdAt']);
+    }),
 
   // ラベル詳細取得
   getById: (id: string): Promise<Label> =>
-    api.get<ApiResponse<Label>>(`/labels/${id}`).then(response =>
-      transformApiResponse(response.data.data, ['createdAt'])
-    ),
+    api.get<ApiResponse<Label>>(`/labels/${id}`).then(response => {
+      const data = response.data?.data;
+      if (!data) throw new Error('Label not found');
+      return transformApiResponse(data, ['createdAt']);
+    }),
 
   // ラベル作成
   create: (data: CreateLabelData): Promise<Label> =>
-    api.post<ApiResponse<Label>>('/labels', data).then(response =>
-      transformApiResponse(response.data.data, ['createdAt'])
-    ),
+    api.post<ApiResponse<Label>>('/labels', data).then(response => {
+      const data = response.data?.data;
+      if (!data) throw new Error('Failed to create label');
+      return transformApiResponse(data, ['createdAt']);
+    }),
 
   // ラベル更新
   update: (id: string, data: UpdateLabelData): Promise<Label> =>
-    api.put<ApiResponse<Label>>(`/labels/${id}`, data).then(response =>
-      transformApiResponse(response.data.data, ['createdAt'])
-    ),
+    api.put<ApiResponse<Label>>(`/labels/${id}`, data).then(response => {
+      const responseData = response.data?.data;
+      if (!responseData) throw new Error('Failed to update label');
+      return transformApiResponse(responseData, ['createdAt']);
+    }),
 
   // ラベル削除
   delete: (id: string): Promise<void> =>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Character } from '../../types';
+import { LabelBadge } from '../labels/LabelBadge';
 
 interface CharacterCardProps {
   character: Character;
@@ -85,18 +86,7 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
         {character.labels && character.labels.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {character.labels.slice(0, 3).map((label) => (
-              <span
-                key={label.id}
-                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                style={{
-                  backgroundColor: `${label.color}20`,
-                  color: label.color,
-                  borderColor: `${label.color}40`,
-                  borderWidth: '1px',
-                }}
-              >
-                {label.name}
-              </span>
+              <LabelBadge key={label.id} label={label} size="sm" />
             ))}
             {character.labels.length > 3 && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
