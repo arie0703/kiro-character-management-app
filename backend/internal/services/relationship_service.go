@@ -5,6 +5,7 @@ import (
 	"character-management-app/internal/repositories"
 	"errors"
 	"fmt"
+	"log"
 )
 
 // RelationshipService 関係サービスのインターフェース
@@ -195,6 +196,10 @@ func (s *relationshipService) UpdateRelationship(id string, relationship *models
 		if exists {
 			return nil, errors.New("relationship already exists between these characters")
 		}
+	} else {
+		// 人物IDが変更されない場合は、既存のGroupIDを保持
+		relationship.GroupID = existing.GroupID
+		log.Printf("DEBUG: existing.GroupID = %s", existing.GroupID)
 	}
 
 	// IDと作成日時を保持
