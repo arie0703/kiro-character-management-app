@@ -203,7 +203,7 @@ export const relationshipApi = {
     if (groupId) params.groupId = groupId;
     if (characterId) params.characterId = characterId;
     return api.get<ApiResponse<Relationship[]>>('/relationships', { params }).then(response =>
-      transformApiArrayResponse(response.data.data, ['createdAt'])
+      transformApiArrayResponse(response.data, ['createdAt'])
     );
   },
 
@@ -215,14 +215,14 @@ export const relationshipApi = {
 
   // 関係作成
   create: (data: CreateRelationshipData): Promise<Relationship> =>
-    api.post<ApiResponse<Relationship>>('/relationships', data).then(response =>
-      transformApiResponse(response.data.data, ['createdAt'])
+    api.post('/relationships', data).then(response =>
+      transformApiResponse(response.data, ['createdAt'])
     ),
 
   // 関係更新
   update: (id: string, data: UpdateRelationshipData): Promise<Relationship> =>
-    api.put<ApiResponse<Relationship>>(`/relationships/${id}`, data).then(response =>
-      transformApiResponse(response.data.data, ['createdAt'])
+    api.put(`/relationships/${id}`, data).then(response =>
+      transformApiResponse(response.data, ['createdAt'])
     ),
 
   // 関係削除
