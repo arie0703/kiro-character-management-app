@@ -111,20 +111,20 @@ export const characterApi = {
 
   // 人物詳細取得
   getById: (id: string): Promise<Character> =>
-    api.get<ApiResponse<Character>>(`/characters/${id}`).then(response =>
+    api.get(`/characters/${id}`).then(response =>
       transformApiResponse(response.data.data, ['createdAt', 'updatedAt'])
     ),
 
   // 人物作成（JSON）
   create: (data: CreateCharacterData): Promise<Character> =>
-    api.post<ApiResponse<Character>>('/characters', data).then(response => {
+    api.post('/characters', data).then(response => {
       console.log(response.data);
-      return transformApiResponse(response.data.data, ['createdAt', 'updatedAt']);
+      return transformApiResponse(response.data, ['createdAt', 'updatedAt']);
     }),
 
   // 人物作成（FormData - 画像付き）
   createWithImage: (data: FormData): Promise<Character> =>
-    api.post<ApiResponse<Character>>('/characters', data, {
+    api.post('/characters', data, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }).then(response =>
       transformApiResponse(response.data.data, ['createdAt', 'updatedAt'])
@@ -132,8 +132,8 @@ export const characterApi = {
 
   // 人物更新（JSON）
   update: (id: string, data: UpdateCharacterData): Promise<Character> =>
-    api.put<ApiResponse<Character>>(`/characters/${id}`, data).then(response =>
-      transformApiResponse(response.data.data, ['createdAt', 'updatedAt'])
+    api.put(`/characters/${id}`, data).then(response =>
+      transformApiResponse(response.data, ['createdAt', 'updatedAt'])
     ),
 
   // 人物更新（FormData - 画像付き）

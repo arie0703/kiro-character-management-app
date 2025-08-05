@@ -7,6 +7,7 @@ import { useRelationshipStore } from '../../stores/relationshipStore';
 import CharacterList from '../characters/CharacterList';
 import CharacterForm from '../characters/CharacterForm';
 import { RelationshipForm, RelationshipList } from '../relationships';
+import { RelationshipGraph } from '../visualization';
 import { Modal, ConfirmDialog } from '../common';
 
 const GroupDetail: React.FC = () => {
@@ -30,7 +31,7 @@ const GroupDetail: React.FC = () => {
   } = useRelationshipStore();
 
   const [group, setGroup] = useState<Group | null>(null);
-  const [activeTab, setActiveTab] = useState<'characters' | 'relationships'>('characters');
+  const [activeTab, setActiveTab] = useState<'characters' | 'relationships' | 'graph'>('characters');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -276,6 +277,15 @@ const GroupDetail: React.FC = () => {
             >
               関係管理
             </button>
+            <button
+              onClick={() => setActiveTab('graph')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'graph'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+            >
+              関係図
+            </button>
           </nav>
         </div>
       </div>
@@ -400,6 +410,52 @@ const GroupDetail: React.FC = () => {
                     }
                   }}
                 />
+              )}
+            </>
+          )}
+
+          {activeTab === 'graph' && (
+            <>
+              <div className="mb-4">
+                <h2 className="text-lg font-medium text-gray-900">関係図</h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  このグループ内の人物間の関係を視覚的に表示します。
+                </p>
+              </div>
+
+              {characters.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">人物が登録されていません</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    関係図を表示するには、まず人物を追加してください。
+                  </p>
+                  <div className="mt-6">
+                    <button
+                      onClick={() => setActiveTab('characters')}
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      人物管理に移動
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-[600px]">
+                  <RelationshipGraph
+                    characters={characters}
+                    relationships={relationships}
+                    onNodeClick={(character) => {
+                      // 人物詳細表示の処理（将来的に実装）
+                      console.log('Node clicked:', character);
+                    }}
+                    onLinkClick={(relationship) => {
+                      // 関係詳細表示の処理（将来的に実装）
+                      console.log('Link clicked:', relationship);
+                    }}
+                  />
+                </div>
               )}
             </>
           )}

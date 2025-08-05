@@ -18,7 +18,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
   onSuccess,
   onCancel,
 }) => {
-  const { createCharacter, updateCharacter, loading, error, clearError } = useCharacterStore();
+  const { createCharacter, updateCharacter, addLabelToCharacter, removeLabelFromCharacter,characters, loading, error, clearError } = useCharacterStore();
   const { selectedGroup, groups } = useGroupStore();
 
   // フォームの状態
@@ -146,6 +146,36 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
           groupId: formData.groupId,
         };
         result = await updateCharacter(character.id, updateData, selectedFile || undefined);
+
+        // Label情報を更新（既存のラベルを削除して新しいラベルを追加）
+        if (result && selectedLabels) {
+          // 既存のラベルと新しいラベルの差分を計算
+          const existingLabelIds = character.labels?.map(l => l.id) || [];
+          const newLabelIds = selectedLabels.map(l => l.id);
+
+          // 削除するラベル
+          const labelsToRemove = existingLabelIds.filter(id => !newLabelIds.includes(id));
+          // 追加するラベル
+          const labelsToAdd = newLabelIds.filter(id => !existingLabelIds.includes(id));
+
+          // ラベルを削除
+          for (const labelId of labelsToRemove) {
+            await removeLabelFromCharacter(result.id, labelId);
+          }
+
+          // ラベルを追加
+          for (const labelId of labelsToAdd) {
+            await addLabelToCharacter(result.id, labelId);
+          }
+
+          // Label操作完了後、charactersリストから最新のCharacterを取得
+          if (labelsToRemove.length > 0 || labelsToAdd.length > 0) {
+            const updatedCharacter = characters.find(c => c.id === result!.id);
+            if (updatedCharacter) {
+              result = updatedCharacter;
+            }
+          }
+        }
       } else {
         // 新規作成
         const createData: CreateCharacterData = {
@@ -155,6 +185,19 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
           groupId: formData.groupId,
         };
         result = await createCharacter(createData, selectedFile || undefined);
+
+        // Label情報を追加
+        if (result && selectedLabels && selectedLabels.length > 0) {
+          for (const label of selectedLabels) {
+            await addLabelToCharacter(result.id, label.id);
+          }
+          
+          // Label操作完了後、charactersリストから最新のCharacterを取得
+          const updatedCharacter = characters.find(c => c.id === result!.id);
+          if (updatedCharacter) {
+            result = updatedCharacter;
+          }
+        }
       }
 
       if (result && onSuccess) {
