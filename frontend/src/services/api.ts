@@ -127,7 +127,7 @@ export const characterApi = {
     api.post('/characters', data, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }).then(response =>
-      transformApiResponse(response.data.data, ['createdAt', 'updatedAt'])
+      transformApiResponse(response.data, ['createdAt', 'updatedAt'])
     ),
 
   // 人物更新（JSON）
@@ -138,10 +138,10 @@ export const characterApi = {
 
   // 人物更新（FormData - 画像付き）
   updateWithImage: (id: string, data: FormData): Promise<Character> =>
-    api.put<ApiResponse<Character>>(`/characters/${id}`, data, {
+    api.put(`/characters/${id}`, data, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }).then(response =>
-      transformApiResponse(response.data.data, ['createdAt', 'updatedAt'])
+      transformApiResponse(response.data, ['createdAt', 'updatedAt'])
     ),
 
   // 人物削除
