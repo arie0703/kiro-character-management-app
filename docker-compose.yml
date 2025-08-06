@@ -36,6 +36,7 @@ services:
       - DB_NAME=character_management
       - GIN_MODE=release
       - PORT=8080
+      - UPLOAD_DIR=/app/uploads
     ports:
       - "8080:8080"
     depends_on:

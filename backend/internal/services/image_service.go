@@ -89,7 +89,9 @@ func (s *imageService) SaveImage(file io.Reader, filename string, maxWidth, maxH
 		return "", fmt.Errorf("failed to encode image: %w", err)
 	}
 
-	return filePath, nil
+	// 静的ファイル配信用の相対パスを返す
+	relativePath := "/uploads/" + uniqueFilename
+	return relativePath, nil
 }
 
 // DeleteImage 画像ファイルを削除
@@ -98,12 +100,21 @@ func (s *imageService) DeleteImage(filePath string) error {
 		return nil
 	}
 
+	// 相対パス（/uploads/filename）を絶対パスに変換
+	var actualPath string
+	if strings.HasPrefix(filePath, "/uploads/") {
+		filename := strings.TrimPrefix(filePath, "/uploads/")
+		actualPath = filepath.Join(s.uploadDir, filename)
+	} else {
+		actualPath = filePath
+	}
+
 	// ファイルが存在するかチェック
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+	if _, err := os.Stat(actualPath); os.IsNotExist(err) {
 		return nil // ファイルが存在しない場合はエラーにしない
 	}
 
-	return os.Remove(filePath)
+	return os.Remove(actualPath)
 }
 
 // ValidateImageFile 画像ファイルの拡張子を検証

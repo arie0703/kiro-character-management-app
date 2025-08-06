@@ -37,7 +37,14 @@ func main() {
 	characterService := services.NewCharacterService(characterRepo, groupRepo, labelRepo)
 	labelService := services.NewLabelService(labelRepo)
 	relationshipService := services.NewRelationshipService(relationshipRepo, characterRepo)
-	imageService := services.NewImageService("uploads/characters")
+	
+	// アップロードディレクトリの設定
+	uploadDir := os.Getenv("UPLOAD_DIR")
+	if uploadDir == "" {
+		uploadDir = "./uploads"
+	}
+	imageService := services.NewImageService(uploadDir)
+	log.Printf("Image service initialized with upload directory: %s", uploadDir)
 
 	// ハンドラーの初期化
 	groupHandler := handlers.NewGroupHandler(groupService)
@@ -112,7 +119,12 @@ func main() {
 	}
 
 	// 静的ファイルの配信（画像用）
-	r.Static("/uploads", "./uploads")
+	staticUploadDir := os.Getenv("UPLOAD_DIR")
+	if staticUploadDir == "" {
+		staticUploadDir = "./uploads"
+	}
+	r.Static("/uploads", staticUploadDir)
+	log.Printf("Static file serving configured for: %s", staticUploadDir)
 
 	// サーバー起動
 	port := os.Getenv("PORT")
