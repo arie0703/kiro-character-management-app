@@ -14,7 +14,7 @@ const GroupDetail: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
 
-  const { groups, fetchGroupById, deleteGroup, loading: groupLoading } = useGroupStore();
+  const { groups, selectedGroup, fetchGroupById, deleteGroup, loading: groupLoading } = useGroupStore();
   const {
     characters,
     fetchCharacters,
@@ -47,19 +47,27 @@ const GroupDetail: React.FC = () => {
         await fetchGroupById(groupId);
         await fetchCharacters(groupId);
         await fetchRelationships(groupId);
-
-        // グループ情報を設定
-        const groupData = groups.find(g => g.id === groupId);
-        if (groupData) {
-          setGroup(groupData);
-        } else {
-          // グループが見つからない場合はホームに戻る
-          navigate('/', { replace: true });
-        }
       };
       fetchData();
     }
-  }, [groupId, fetchGroupById, fetchCharacters, fetchRelationships, groups, navigate]);
+  }, [groupId, fetchGroupById, fetchCharacters, fetchRelationships]);
+
+  // グループデータの設定（キャッシュから取得）
+  useEffect(() => {
+    if (groupId) {
+      // まずキャッシュされたgroupsから検索
+      const cachedGroup = groups.find(g => g.id === groupId);
+      if (cachedGroup) {
+        setGroup(cachedGroup);
+      } else if (selectedGroup && selectedGroup.id === groupId) {
+        // selectedGroupからも確認
+        setGroup(selectedGroup);
+      } else if (!groupLoading.list) {
+        // ローディングが完了してもグループが見つからない場合のみリダイレクト
+        navigate('/', { replace: true });
+      }
+    }
+  }, [groupId, groups, selectedGroup, groupLoading.list, navigate]);
 
   // グループ削除処理
   const handleDeleteGroup = async () => {
@@ -262,8 +270,8 @@ const GroupDetail: React.FC = () => {
             <button
               onClick={() => setActiveTab('characters')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'characters'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
               人物管理
@@ -271,8 +279,8 @@ const GroupDetail: React.FC = () => {
             <button
               onClick={() => setActiveTab('relationships')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'relationships'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
               関係管理
@@ -280,8 +288,8 @@ const GroupDetail: React.FC = () => {
             <button
               onClick={() => setActiveTab('graph')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'graph'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
               関係図

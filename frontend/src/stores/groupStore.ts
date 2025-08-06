@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 import { Group, CreateGroupData, UpdateGroupData, ApiError } from '../types';
 import { groupApi } from '../services/api';
 import { formatApiError } from '../services/utils';
@@ -45,8 +45,9 @@ const initialState = {
 
 export const useGroupStore = create<GroupState>()(
   devtools(
-    (set, get) => ({
-      ...initialState,
+    persist(
+      (set, get) => ({
+        ...initialState,
 
       fetchGroups: async () => {
         set(state => ({
@@ -84,6 +85,10 @@ export const useGroupStore = create<GroupState>()(
           set(state => ({
             ...state,
             selectedGroup: group,
+            // groupsにも追加/更新してキャッシュを維持
+            groups: state.groups.some(g => g.id === id) 
+              ? state.groups.map(g => g.id === id ? group : g)
+              : [...state.groups, group],
             loading: { ...state.loading, list: false }
           }));
         } catch (error) {
@@ -187,7 +192,33 @@ export const useGroupStore = create<GroupState>()(
       },
     }),
     {
-      name: 'group-store',
+      name: 'group-storage', // localStorage key
+      partialize: (state) => ({ 
+        groups: state.groups,
+        selectedGroup: state.selectedGroup 
+      }), // キャッシュする部分を指定
+      onRehydrateStorage: () => (state) => {
+        // キャッシュから復元時に日付文字列をDateオブジェクトに変換
+        if (state) {
+          state.groups = state.groups.map(group => ({
+            ...group,
+            createdAt: typeof group.createdAt === 'string' ? new Date(group.createdAt) : group.createdAt,
+            updatedAt: typeof group.updatedAt === 'string' ? new Date(group.updatedAt) : group.updatedAt,
+          }));
+          if (state.selectedGroup) {
+            console.log(state.selectedGroup)
+            state.selectedGroup = {
+              ...state.selectedGroup,
+              createdAt: typeof state.selectedGroup.createdAt === 'string' ? new Date(state.selectedGroup.createdAt) : state.selectedGroup.createdAt,
+              updatedAt: typeof state.selectedGroup.updatedAt === 'string' ? new Date(state.selectedGroup.updatedAt) : state.selectedGroup.updatedAt,
+            };
+          }
+        }
+      },
     }
-  )
+  ),
+  {
+    name: 'group-store',
+  }
+)
 );
