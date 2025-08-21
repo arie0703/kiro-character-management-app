@@ -293,6 +293,7 @@ func (h *CharacterHandler) handleMultipartCreate(c *gin.Context, req *CreateChar
 		// 画像サービスを使用してファイルを保存（800x600にリサイズ）
 		path, err := h.imageService.SaveImage(file, header.Filename, 800, 600)
 		if err != nil {
+			fmt.Printf("ERROR: Failed to save image file %s: %v\n", header.Filename, err)
 			return fmt.Errorf("failed to save uploaded file: %w", err)
 		}
 		*photoPath = &path
@@ -324,6 +325,7 @@ func (h *CharacterHandler) handleMultipartUpdate(c *gin.Context, req *UpdateChar
 		// 画像サービスを使用してファイルを保存（800x600にリサイズ）
 		path, err := h.imageService.SaveImage(file, header.Filename, 800, 600)
 		if err != nil {
+			fmt.Printf("ERROR: Failed to save image file %s: %v\n", header.Filename, err)
 			return fmt.Errorf("failed to save uploaded file: %w", err)
 		}
 		*photoPath = &path
