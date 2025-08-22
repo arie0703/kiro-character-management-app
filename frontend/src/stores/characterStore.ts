@@ -30,6 +30,7 @@ interface CharacterState {
   deleteCharacter: (id: string) => Promise<boolean>;
   addLabelToCharacter: (characterId: string, labelId: string) => Promise<boolean>;
   removeLabelFromCharacter: (characterId: string, labelId: string) => Promise<boolean>;
+  updateCharacterInStore: (updatedCharacter: Character) => void;
   selectCharacter: (character: Character | null) => void;
   clearError: () => void;
   reset: () => void;
@@ -226,7 +227,7 @@ export const useCharacterStore = create<CharacterState>()(
         try {
           await characterApi.addLabel(characterId, labelId);
 
-          // キャラクターを再取得してラベル情報を更新
+          // キャラクターを再取得してラベル情報を更新（個別更新）
           const updatedCharacter = await characterApi.getById(characterId);
 
           set(state => ({
@@ -258,7 +259,7 @@ export const useCharacterStore = create<CharacterState>()(
         try {
           await characterApi.removeLabel(characterId, labelId);
 
-          // キャラクターを再取得してラベル情報を更新
+          // キャラクターを再取得してラベル情報を更新（個別更新）
           const updatedCharacter = await characterApi.getById(characterId);
 
           set(state => ({
@@ -278,6 +279,16 @@ export const useCharacterStore = create<CharacterState>()(
           }));
           return false;
         }
+      },
+
+      updateCharacterInStore: (updatedCharacter: Character) => {
+        set(state => ({
+          ...state,
+          characters: state.characters.map(character =>
+            character.id === updatedCharacter.id ? updatedCharacter : character
+          ),
+          selectedCharacter: state.selectedCharacter?.id === updatedCharacter.id ? updatedCharacter : state.selectedCharacter,
+        }));
       },
 
       selectCharacter: (character: Character | null) => {
