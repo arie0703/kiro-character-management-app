@@ -112,7 +112,7 @@ export const characterApi = {
   // 人物詳細取得
   getById: (id: string): Promise<Character> =>
     api.get(`/characters/${id}`).then(response =>
-      transformApiResponse(response.data.data, ['createdAt', 'updatedAt'])
+      transformApiResponse(response.data, ['createdAt', 'updatedAt'])
     ),
 
   // 人物作成（JSON）

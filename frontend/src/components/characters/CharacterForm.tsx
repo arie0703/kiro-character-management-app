@@ -4,6 +4,7 @@ import { useCharacterStore } from '../../stores/characterStore';
 import { useGroupStore } from '../../stores/groupStore';
 import { ImageUpload } from '../common';
 import { LabelSelector } from '../labels/LabelSelector';
+import { characterApi } from '../../services/api';
 
 interface CharacterFormProps {
   character?: Character; // 編集時に渡される
@@ -18,7 +19,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
   onSuccess,
   onCancel,
 }) => {
-  const { createCharacter, updateCharacter, addLabelToCharacter, removeLabelFromCharacter,characters, loading, error, clearError } = useCharacterStore();
+  const { createCharacter, updateCharacter, addLabelToCharacter, removeLabelFromCharacter, updateCharacterInStore, characters, loading, error, clearError } = useCharacterStore();
   const { selectedGroup, groups } = useGroupStore();
 
   // フォームの状態
@@ -168,12 +169,11 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
             await addLabelToCharacter(result.id, labelId);
           }
 
-          // Label操作完了後、charactersリストから最新のCharacterを取得
+          // Label操作完了後、該当キャラクターのみ再取得して部分更新
           if (labelsToRemove.length > 0 || labelsToAdd.length > 0) {
-            const updatedCharacter = characters.find(c => c.id === result!.id);
-            if (updatedCharacter) {
-              result = updatedCharacter;
-            }
+            const updatedCharacter = await characterApi.getById(result.id);
+            updateCharacterInStore(updatedCharacter);
+            result = updatedCharacter;
           }
         }
       } else {
@@ -191,12 +191,11 @@ const CharacterForm: React.FC<CharacterFormProps> = ({
           for (const label of selectedLabels) {
             await addLabelToCharacter(result.id, label.id);
           }
-          
-          // Label操作完了後、charactersリストから最新のCharacterを取得
-          const updatedCharacter = characters.find(c => c.id === result!.id);
-          if (updatedCharacter) {
-            result = updatedCharacter;
-          }
+
+          // Label操作完了後、該当キャラクターのみ再取得して部分更新
+          const updatedCharacter = await characterApi.getById(result.id);
+          updateCharacterInStore(updatedCharacter);
+          result = updatedCharacter;
         }
       }
 
